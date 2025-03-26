@@ -14,6 +14,7 @@ import type {
   FunctionReference,
 } from "convex/server";
 import type * as newsletter from "../newsletter.js";
+import type * as watchlist from "../watchlist.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -25,6 +26,7 @@ import type * as newsletter from "../newsletter.js";
  */
 declare const fullApi: ApiFromModules<{
   newsletter: typeof newsletter;
+  watchlist: typeof watchlist;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,

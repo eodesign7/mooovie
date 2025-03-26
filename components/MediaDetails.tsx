@@ -3,7 +3,15 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
-import { Star, Clock, Calendar, Play, Maximize2 } from "lucide-react";
+import {
+  Star,
+  Clock,
+  Calendar,
+  Play,
+  Maximize2,
+  Plus,
+  ChevronDown,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -12,16 +20,35 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import YouTube from "react-youtube";
 import { getSimilar } from "@/actions/getSimilar";
 import { getImages, type MediaImage } from "@/actions/getImages";
 import { MovieCard } from "./movies/MovieCard";
+import { useUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
 
 interface MediaDetailsProps {
   media: Movie | TVShow | Person;
 }
 
 export function MediaDetails({ media }: MediaDetailsProps) {
+  const { user } = useUser();
+  const router = useRouter();
+  const addToWatchlist = useMutation(api.watchlist.addToWatchlist);
+  const watchlists = useQuery(api.watchlist.getUserWatchlists, {
+    userId: user?.id || "",
+  });
+
   const [similarContent, setSimilarContent] = useState<(Movie | TVShow)[]>([]);
   const [images, setImages] = useState<{
     backdrops: MediaImage[];
@@ -83,6 +110,26 @@ export function MediaDetails({ media }: MediaDetailsProps) {
 
     fetchData();
   }, [media.id, isMovie, isTVShow]);
+
+  const handleAddToWatchlist = async (watchlistId: Id<"watchlists">) => {
+    try {
+      await addToWatchlist({
+        watchlistId,
+        mediaId: media.id.toString(),
+        mediaType: isMovie ? "movie" : isTVShow ? "tv" : "person",
+        title: title,
+        posterPath: posterPath || undefined,
+      });
+
+      toast.success("Added to Watchlist", {
+        description: `${title} has been added to your watchlist.`,
+      });
+    } catch {
+      toast.error("Error", {
+        description: "Failed to add to watchlist. Please try again.",
+      });
+    }
+  };
 
   return (
     <div>
@@ -192,8 +239,8 @@ export function MediaDetails({ media }: MediaDetailsProps) {
                   )}
 
                   {/* Watch Trailer Button */}
-                  {trailer && (
-                    <div className="mt-8">
+                  <div className="mt-8 flex gap-4">
+                    {trailer && (
                       <Dialog>
                         <DialogTrigger asChild>
                           <Button className="flex items-center gap-2">
@@ -222,8 +269,45 @@ export function MediaDetails({ media }: MediaDetailsProps) {
                           </div>
                         </DialogContent>
                       </Dialog>
-                    </div>
-                  )}
+                    )}
+
+                    {/* Add to Watchlist Button */}
+                    {user &&
+                      (isMovie || isTVShow) &&
+                      (watchlists && watchlists.length > 0 ? (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className="flex items-center gap-2"
+                            >
+                              <Plus className="h-5 w-5" />
+                              Add to Watchlist
+                              <ChevronDown className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            {watchlists.map((list) => (
+                              <DropdownMenuItem
+                                key={list._id}
+                                onClick={() => handleAddToWatchlist(list._id)}
+                              >
+                                {list.name}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          className="flex items-center gap-2"
+                          onClick={() => router.push("/watchlist")}
+                        >
+                          <Plus className="h-5 w-5" />
+                          Create Watchlist
+                        </Button>
+                      ))}
+                  </div>
                 </div>
               </div>
             </div>
