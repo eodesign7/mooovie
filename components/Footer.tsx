@@ -57,7 +57,7 @@ export default function Footer() {
 
           {/* Copyright text */}
           <p className="text-center text-sm text-muted-foreground">
-            ©2025 Mooovie. Developer with{" "}
+            ©2025 Mooovie. Created with{" "}
             <span role="img" aria-label="love">
               💖
             </span>{" "}

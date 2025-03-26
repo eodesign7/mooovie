@@ -2,7 +2,7 @@ import MovieOfTheDay from "@/components/movies/MovieOfTheDay";
 import PopularMovies from "@/components/movies/PopularMovies";
 import Upcoming from "@/components/movies/Upcoming";
 import Newsletter from "@/components/Newsletter";
-import Footer from "@/components/Footer";
+
 
 export default async function Home() {
   return (
@@ -22,7 +22,7 @@ export default async function Home() {
       </main>
 
       {/* Footer */}
-      <Footer />
+    
     </div>
   );
 }

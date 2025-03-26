@@ -8,99 +8,97 @@ type MovieTrailer = {
   published_at: string;
 };
 
-type Movie = {
+interface Movie {
   id: number;
   title: string;
+  overview: string;
   poster_path: string | null;
-  backdrop_path: string;
-  // Základné informácie
-  overview?: string;
-  release_date?: string;
+  backdrop_path: string | null;
+  release_date: string;
+  vote_average: number;
   runtime?: number;
-  status?: string;
   tagline?: string;
-
-  // Hodnotenia a popularita
-  vote_average?: number;
-  vote_count?: number;
-  popularity?: number;
-
-  // Žánre a kategórie
-  genres?: Array<{
-    id: number;
-    name: string;
-  }>;
-  adult?: boolean;
-  original_language?: string;
-  original_title?: string;
-
-  // Produkčné detaily
-  budget?: number;
-  revenue?: number;
-  production_companies?: Array<{
-    id: number;
-    name: string;
-    logo_path?: string;
-    origin_country: string;
-  }>;
-  production_countries?: Array<{
-    iso_3166_1: string;
-    name: string;
-  }>;
-
-  // Dodatočné médiá
-  video?: boolean;
+  popularity: number;
+  genres?: { id: number; name: string }[];
+  credits?: {
+    cast: {
+      id: number;
+      name: string;
+      character: string;
+      profile_path: string | null;
+    }[];
+    crew: {
+      id: number;
+      name: string;
+      job: string;
+    }[];
+  };
   videos?: {
-    results: Array<{
-      id: string;
+    results: {
       key: string;
       name: string;
-      site: string;
-      size: number;
       type: string;
-    }>;
+    }[];
   };
-
-  // Externé ID
-  imdb_id?: string;
-
-  // Kolekcia
-  belongs_to_collection?: {
-    id: number;
-    name: string;
-    poster_path?: string;
-    backdrop_path?: string;
+  media_type?: "movie";
+  has_video: boolean;
+  trailer: {
+    key: string;
   };
+}
 
-  trailer?: MovieTrailer;
-};
-
-type TVShow = {
+interface TVShow {
   id: number;
   name: string;
+  overview: string;
   poster_path: string | null;
+  backdrop_path: string | null;
   first_air_date: string;
   vote_average: number;
-  overview: string;
-  genre_ids: number[];
-};
+  popularity: number;
+  genres?: { id: number; name: string }[];
+  credits?: {
+    cast: {
+      id: number;
+      name: string;
+      character: string;
+      profile_path: string | null;
+    }[];
+    crew: {
+      id: number;
+      name: string;
+      job: string;
+    }[];
+  };
+  videos?: {
+    results: {
+      key: string;
+      name: string;
+      type: string;
+    }[];
+  };
+  media_type?: "tv";
+}
 
-type Person = {
+interface Person {
   id: number;
   name: string;
   profile_path: string | null;
   known_for_department: string;
-  known_for: Array<{
+  biography?: string;
+  known_for?: {
     id: number;
     title?: string;
     name?: string;
     media_type: "movie" | "tv";
-  }>;
-};
+    poster_path: string | null;
+  }[];
+  media_type?: "person";
+}
 
-type TMDBResponse<T> = {
+interface TMDBResponse<T> {
   page: number;
   results: T[];
   total_pages: number;
   total_results: number;
-};
+}

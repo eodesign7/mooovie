@@ -6,9 +6,9 @@ export default async function getFilteredMovies(
     year,
     genres,
     rating,
-  }: { year?: string; genres?: string[]; rating?: number },
+  }: { year?: string; genres?: number[]; rating?: number },
 ) {
-  let url = `https://api.themoviedb.org/3/discover/movie?language=en-US&page=${page}`;
+  let url = `https://api.themoviedb.org/3/discover/movie?language=en-US&page=${page}&include_adult=false`;
 
   if (year) {
     url += `&primary_release_year=${year}`;

@@ -16,7 +16,7 @@ export default async function PopularMovies() {
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-2xl font-bold">Most Popular Movies</h2>
           <Link
-            href="#"
+            href="/movies"
             className="text-sm text-white/70 hover:text-white transition-colors flex items-center gap-2"
           >
             View All

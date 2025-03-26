@@ -17,7 +17,7 @@ export default async function PopularMovies() {
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-2xl font-bold">Upcoming Trailers</h2>
           <Link
-            href="#"
+            href="/movies"
             className="text-sm text-white/70 hover:text-white transition-colors flex items-center gap-2"
           >
             View All
@@ -26,9 +26,9 @@ export default async function PopularMovies() {
         </div>
 
         <ScrollArea className="w-full rounded-md">
-          <div className="flex space-x-4 pb-4">
+          <div className="flex gap-4 pb-4">
             {movies.map((movie: Movie) => (
-              <div key={movie.id} className="w-[200px] flex-none">
+              <div key={movie.id} className="w-[480px] flex-none">
                 <TrailerCard movie={movie} />
               </div>
             ))}

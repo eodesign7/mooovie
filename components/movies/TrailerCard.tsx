@@ -19,7 +19,7 @@ export default function TrailerCard({ movie, className }: TrailerCardProps) {
   if (!movie.trailer) return null;
 
   return (
-    <div className="w-[200px] flex-none">
+    <div className="w-[480px] flex-none">
       <div
         className={`relative aspect-video rounded-lg overflow-hidden ${className}`}
       >
@@ -28,7 +28,7 @@ export default function TrailerCard({ movie, className }: TrailerCardProps) {
           alt={movie.title}
           fill
           className="object-cover"
-          sizes="200px"
+          sizes="480px"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent">
           <div className="absolute bottom-0 left-0 right-0 p-4">

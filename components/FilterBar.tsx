@@ -1,24 +1,31 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Checkbox } from "@/components/ui/checkbox";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { getMovieGenres, getTVGenres, type Genre } from "@/actions/getGenres";
+import { RotateCcw } from "lucide-react";
 
 interface FilterBarProps {
   mediaType: "movies" | "series" | "tv-shows" | "actors";
   onFilterChange: (filters: {
     year?: string;
-    genres?: string[];
+    genres?: number[];
     rating?: number;
   }) => void;
-  currentFilters: { year?: string; genres?: string[]; rating?: number };
+  currentFilters: { year?: string; genres?: number[]; rating?: number };
 }
 
 export function FilterBar({
@@ -30,146 +37,136 @@ export function FilterBar({
     min: currentFilters.year || "",
     max: currentFilters.year || "",
   });
-  const [selectedGenres, setSelectedGenres] = useState<string[]>(
+  const [selectedGenres, setSelectedGenres] = useState<number[]>(
     currentFilters.genres || [],
   );
   const [selectedRating, setSelectedRating] = useState<number | undefined>(
     currentFilters.rating,
   );
-
-  const genreOptions = [
-    "Action",
-    "Adventure",
-    "Animation",
-    "Comedy",
-    "Crime",
-    "Documentary",
-    "Drama",
-    "Family",
-    "Fantasy",
-    "Horror",
-    "Mystery",
-    "Romance",
-    "Sci-Fi",
-    "Thriller",
-  ];
+  const [genres, setGenres] = useState<Genre[]>([]);
 
   useEffect(() => {
-    const newFilters = {
-      year:
-        yearRange.min || yearRange.max
-          ? yearRange.min || yearRange.max
-          : undefined,
-      genres: selectedGenres.length > 0 ? selectedGenres : undefined,
-      rating: selectedRating,
-    };
-    onFilterChange(newFilters);
-  }, [yearRange, selectedGenres, selectedRating, onFilterChange]);
+    async function fetchGenres() {
+      const genreList =
+        mediaType === "movies" ? await getMovieGenres() : await getTVGenres();
+      setGenres(genreList);
+    }
+
+    if (mediaType !== "actors") {
+      fetchGenres();
+    }
+  }, [mediaType]);
 
   const handleReset = () => {
     setYearRange({ min: "", max: "" });
     setSelectedGenres([]);
     setSelectedRating(undefined);
+    onFilterChange({});
   };
 
-  const handleGenreChange = (genre: string, checked: boolean) => {
-    setSelectedGenres((prev) =>
-      checked ? [...prev, genre] : prev.filter((g) => g !== genre),
-    );
+  const handleGenreChange = (value: string) => {
+    const genreId = parseInt(value);
+    const newGenres = selectedGenres.includes(genreId)
+      ? selectedGenres.filter((g) => g !== genreId)
+      : [...selectedGenres, genreId];
+    setSelectedGenres(newGenres);
+    onFilterChange({
+      ...currentFilters,
+      genres: newGenres.length > 0 ? newGenres : undefined,
+    });
   };
 
-  const handleRatingChange = (rating: number, checked: boolean) => {
-    setSelectedRating(checked ? rating : undefined);
+  const handleRatingChange = (value: string) => {
+    const rating = parseInt(value);
+    setSelectedRating(rating);
+    onFilterChange({
+      ...currentFilters,
+      rating,
+    });
   };
+
+  const handleYearChange = (type: "min" | "max", value: string) => {
+    const newYearRange = { ...yearRange, [type]: value };
+    setYearRange(newYearRange);
+    onFilterChange({
+      ...currentFilters,
+      year:
+        newYearRange.min || newYearRange.max
+          ? newYearRange.min || newYearRange.max
+          : undefined,
+    });
+  };
+
+  if (mediaType === "actors") return null;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-semibold mb-4">Filters</h2>
-        <Button variant="outline" className="w-full" onClick={handleReset}>
-          Reset Filters
-        </Button>
+    <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2">
+        <Input
+          type="number"
+          placeholder="Year from"
+          className="w-24"
+          value={yearRange.min}
+          onChange={(e) => handleYearChange("min", e.target.value)}
+        />
+        <span className="text-muted-foreground">-</span>
+        <Input
+          type="number"
+          placeholder="Year to"
+          className="w-24"
+          value={yearRange.max}
+          onChange={(e) => handleYearChange("max", e.target.value)}
+        />
       </div>
 
-      <Accordion type="single" collapsible className="w-full">
-        {mediaType !== "actors" && (
-          <AccordionItem value="year">
-            <AccordionTrigger>Year</AccordionTrigger>
-            <AccordionContent>
-              <div className="space-y-2">
-                <Input
-                  type="number"
-                  placeholder="From"
-                  value={yearRange.min}
-                  onChange={(e) =>
-                    setYearRange((prev) => ({ ...prev, min: e.target.value }))
-                  }
-                />
-                <Input
-                  type="number"
-                  placeholder="To"
-                  value={yearRange.max}
-                  onChange={(e) =>
-                    setYearRange((prev) => ({ ...prev, max: e.target.value }))
-                  }
-                />
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        )}
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" className="min-w-[120px]">
+            Genres ({selectedGenres.length})
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[200px] p-0" align="start">
+          <div className="p-2 grid gap-1">
+            {genres.map((genre) => (
+              <Button
+                key={genre.id}
+                variant={
+                  selectedGenres.includes(genre.id) ? "secondary" : "ghost"
+                }
+                className="w-full justify-start font-normal"
+                onClick={() => handleGenreChange(genre.id.toString())}
+              >
+                {genre.name}
+              </Button>
+            ))}
+          </div>
+        </PopoverContent>
+      </Popover>
 
-        {mediaType !== "actors" && (
-          <AccordionItem value="genres">
-            <AccordionTrigger>Genres</AccordionTrigger>
-            <AccordionContent>
-              <div className="space-y-2">
-                {genreOptions.map((genre) => (
-                  <div key={genre} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={genre}
-                      checked={selectedGenres.includes(genre)}
-                      onCheckedChange={(checked) =>
-                        handleGenreChange(genre, checked as boolean)
-                      }
-                    />
-                    <label
-                      htmlFor={genre}
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      {genre}
-                    </label>
-                  </div>
-                ))}
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        )}
+      <Select
+        value={selectedRating?.toString()}
+        onValueChange={handleRatingChange}
+      >
+        <SelectTrigger className="w-[130px]">
+          <SelectValue placeholder="Rating" />
+        </SelectTrigger>
+        <SelectContent>
+          {[9, 8, 7, 6, 5].map((rating) => (
+            <SelectItem key={rating} value={rating.toString()}>
+              {rating}+ Stars
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
 
-        <AccordionItem value="rating">
-          <AccordionTrigger>Rating</AccordionTrigger>
-          <AccordionContent>
-            <div className="space-y-2">
-              {[9, 8, 7, 6, 5].map((rating) => (
-                <div key={rating} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`rating-${rating}`}
-                    checked={selectedRating === rating}
-                    onCheckedChange={(checked) =>
-                      handleRatingChange(rating, checked as boolean)
-                    }
-                  />
-                  <label
-                    htmlFor={`rating-${rating}`}
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    {rating}+ Stars
-                  </label>
-                </div>
-              ))}
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={handleReset}
+        className="ml-2"
+      >
+        <RotateCcw className="h-4 w-4" />
+      </Button>
     </div>
   );
 }

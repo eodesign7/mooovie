@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { MediaGrid } from "@/components/MediaGrid";
 import { FilterBar } from "@/components/FilterBar";
 import { SortOptions } from "@/components/SortOptions";
@@ -9,10 +9,19 @@ import getTVShows from "@/actions/getTVShows";
 import getPeople from "@/actions/getPeople";
 import getFilteredMovies from "@/actions/getFilteredMovies";
 import getFilteredTVShows from "@/actions/getFilteredTVShows";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 type FilterState = {
   year?: string;
-  genres?: string[];
+  genres?: number[];
   rating?: number;
 };
 
@@ -69,7 +78,64 @@ export default function MediaPageClient({ mediaType }: MediaPageClientProps) {
     }
 
     fetchData();
-  }, [mediaType, currentPage, filters, sortBy]);
+  }, [mediaType, currentPage, filters]);
+
+  const sortedItems = useMemo(() => {
+    return [...items].sort((a, b) => {
+      if (sortBy === "popularity") {
+        const aPopularity =
+          "popularity" in a ? (a as Movie).popularity || 0 : 0;
+        const bPopularity =
+          "popularity" in b ? (b as Movie).popularity || 0 : 0;
+        return bPopularity - aPopularity;
+      }
+      if (sortBy === "rating") {
+        const aRating =
+          "vote_average" in a ? (a as Movie | TVShow).vote_average || 0 : 0;
+        const bRating =
+          "vote_average" in b ? (b as Movie | TVShow).vote_average || 0 : 0;
+        return bRating - aRating;
+      }
+      if (sortBy === "release_date") {
+        const aDate =
+          "release_date" in a
+            ? (a as Movie).release_date || ""
+            : "first_air_date" in a
+              ? (a as TVShow).first_air_date || ""
+              : "";
+        const bDate =
+          "release_date" in b
+            ? (b as Movie).release_date || ""
+            : "first_air_date" in b
+              ? (b as TVShow).first_air_date || ""
+              : "";
+        return aDate && bDate
+          ? new Date(bDate).getTime() - new Date(aDate).getTime()
+          : 0;
+      }
+      if (sortBy === "title") {
+        const aTitle =
+          "title" in a
+            ? (a as Movie).title
+            : "name" in a
+              ? (a as TVShow | Person).name
+              : "";
+        const bTitle =
+          "title" in b
+            ? (b as Movie).title
+            : "name" in b
+              ? (b as TVShow | Person).name
+              : "";
+        return aTitle.localeCompare(bTitle);
+      }
+      if (sortBy === "name") {
+        const aName = "name" in a ? (a as Person).name : "";
+        const bName = "name" in b ? (b as Person).name : "";
+        return aName.localeCompare(bName);
+      }
+      return 0;
+    });
+  }, [items, sortBy]);
 
   const handleFilterChange = (newFilters: FilterState) => {
     setFilters(newFilters);
@@ -90,58 +156,120 @@ export default function MediaPageClient({ mediaType }: MediaPageClientProps) {
           </h1>
         </div>
 
-        <div className="flex gap-6">
-          <aside className="w-64 flex-shrink-0">
+        <div className="flex flex-col gap-6">
+          <div className="flex items-center justify-between">
             <FilterBar
               mediaType={mediaType}
               onFilterChange={handleFilterChange}
               currentFilters={filters}
             />
-          </aside>
+            <SortOptions
+              mediaType={mediaType}
+              onSortChange={handleSortChange}
+              currentSort={sortBy}
+            />
+          </div>
 
-          <div className="flex-1">
-            <div className="mb-6">
-              <SortOptions
-                mediaType={mediaType}
-                onSortChange={handleSortChange}
-                currentSort={sortBy}
-              />
+          {isLoading ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Loading...</p>
             </div>
+          ) : (
+            <MediaGrid items={sortedItems} mediaType={mediaType} />
+          )}
 
-            {isLoading ? (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">Loading...</p>
-              </div>
-            ) : (
-              <MediaGrid items={items} mediaType={mediaType} />
-            )}
+          {/* Pagination */}
+          <div className="flex justify-center mt-8">
+            <Pagination>
+              <PaginationContent className="flex justify-center gap-2">
+                <PaginationItem>
+                  <PaginationPrevious
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.max(1, prev - 1))
+                    }
+                    className={
+                      currentPage === 1 ? "pointer-events-none opacity-50" : ""
+                    }
+                  />
+                </PaginationItem>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="mt-8 flex justify-center gap-2">
-                <button
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.max(1, prev - 1))
-                  }
-                  disabled={currentPage === 1}
-                  className="px-4 py-2 bg-zinc-800 rounded-lg disabled:opacity-50"
-                >
-                  Previous
-                </button>
-                <span className="px-4 py-2">
-                  Page {currentPage} of {totalPages}
-                </span>
-                <button
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.min(totalPages, prev + 1))
-                  }
-                  disabled={currentPage === totalPages}
-                  className="px-4 py-2 bg-zinc-800 rounded-lg disabled:opacity-50"
-                >
-                  Next
-                </button>
-              </div>
-            )}
+                {/* First Page */}
+                <PaginationItem>
+                  <PaginationLink
+                    onClick={() => setCurrentPage(1)}
+                    isActive={currentPage === 1}
+                  >
+                    1
+                  </PaginationLink>
+                </PaginationItem>
+
+                {/* Show ellipsis if current page is > 3 */}
+                {currentPage > 3 && (
+                  <PaginationItem>
+                    <PaginationEllipsis />
+                  </PaginationItem>
+                )}
+
+                {/* Pages before current */}
+                {currentPage > 2 && (
+                  <PaginationItem>
+                    <PaginationLink
+                      onClick={() => setCurrentPage(currentPage - 1)}
+                    >
+                      {currentPage - 1}
+                    </PaginationLink>
+                  </PaginationItem>
+                )}
+
+                {/* Current Page */}
+                {currentPage !== 1 && currentPage !== totalPages && (
+                  <PaginationItem>
+                    <PaginationLink isActive>{currentPage}</PaginationLink>
+                  </PaginationItem>
+                )}
+
+                {/* Pages after current */}
+                {currentPage < totalPages - 1 && (
+                  <PaginationItem>
+                    <PaginationLink
+                      onClick={() => setCurrentPage(currentPage + 1)}
+                    >
+                      {currentPage + 1}
+                    </PaginationLink>
+                  </PaginationItem>
+                )}
+
+                {/* Show ellipsis if there are more pages */}
+                {currentPage < totalPages - 2 && (
+                  <PaginationItem>
+                    <PaginationEllipsis />
+                  </PaginationItem>
+                )}
+
+                {/* Last Page */}
+                <PaginationItem>
+                  <PaginationLink
+                    onClick={() => setCurrentPage(totalPages)}
+                    isActive={currentPage === totalPages}
+                  >
+                    {totalPages}
+                  </PaginationLink>
+                </PaginationItem>
+
+                <PaginationItem>
+                  <PaginationNext
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                    }
+                    className={
+                      currentPage === totalPages
+                        ? "pointer-events-none opacity-50"
+                        : ""
+                    }
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
           </div>
         </div>
       </div>
