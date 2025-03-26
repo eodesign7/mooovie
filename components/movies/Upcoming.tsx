@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import getUpcomingMovies from "@/actions/getUpcomingMovies";
 import TrailerCard from "./TrailerCard";
+import { ChevronRight } from "lucide-react";
 
 export default async function PopularMovies() {
   const movies = await getUpcomingMovies();
@@ -17,9 +18,10 @@ export default async function PopularMovies() {
           <h2 className="text-2xl font-bold">Upcoming Trailers</h2>
           <Link
             href="#"
-            className="text-sm text-white/70 hover:text-white transition"
+            className="text-sm text-white/70 hover:text-white transition-colors flex items-center gap-2"
           >
             View All
+            <ChevronRight className="w-4 h-4" />
           </Link>
         </div>
 

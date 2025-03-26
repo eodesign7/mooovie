@@ -11,7 +11,7 @@ type MovieTrailer = {
 type Movie = {
   id: number;
   title: string;
-  poster_path: string;
+  poster_path: string | null;
   backdrop_path: string;
   // Základné informácie
   overview?: string;
@@ -73,4 +73,34 @@ type Movie = {
   };
 
   trailer?: MovieTrailer;
+};
+
+type TVShow = {
+  id: number;
+  name: string;
+  poster_path: string | null;
+  first_air_date: string;
+  vote_average: number;
+  overview: string;
+  genre_ids: number[];
+};
+
+type Person = {
+  id: number;
+  name: string;
+  profile_path: string | null;
+  known_for_department: string;
+  known_for: Array<{
+    id: number;
+    title?: string;
+    name?: string;
+    media_type: "movie" | "tv";
+  }>;
+};
+
+type TMDBResponse<T> = {
+  page: number;
+  results: T[];
+  total_pages: number;
+  total_results: number;
 };

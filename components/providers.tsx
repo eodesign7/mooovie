@@ -12,8 +12,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         <NextThemesProvider
           attribute="class"
           defaultTheme="dark"
-          enableSystem={false}
-          forcedTheme="dark"
+          enableSystem
         >
           {children}
           <Toaster theme="dark" position="bottom-right" richColors />
